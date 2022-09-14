@@ -1,0 +1,50 @@
+on: [push]
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    
+    - uses: azure/docker-login@v1
+      with:
+        login-server: practicecheck.azurecr.io
+        username: ${{ secrets.acr_practicecheck_username }}
+        password: ${{ secrets.acr_practicecheck_password }}
+    
+    - name: Build and push image to ACR
+      id: build-image
+      run: |
+        docker build "$GITHUB_WORKSPACE/" -f  "Dockerfile" -t practicecheck.azurecr.io/practicekub:${{ github.sha }} --label dockerfile-path=Dockerfile
+        docker push practicecheck.azurecr.io/practicekub:${{ github.sha }}
+    
+    - uses: azure/k8s-set-context@v1
+      with:
+         kubeconfig: ${{ secrets.aks_practicekub_kubeConfig }}
+      id: login
+    
+    - name: Create namespace
+      run: |
+        namespacePresent=`kubectl get namespace | grep practicekubbf4e | wc -l`
+        if [ $namespacePresent -eq 0 ]
+        then
+            echo `kubectl create namespace practicekubbf4e`
+        fi
+
+    - uses: azure/k8s-create-secret@v1
+      with:
+        namespace: practicekubbf4e
+        container-registry-url: practicecheck.azurecr.io
+        container-registry-username: ${{ secrets.acr_practicecheck_username }}
+        container-registry-password: ${{ secrets.acr_practicecheck_password }}
+        secret-name: practicekubdockerauth
+       
+    - uses: azure/k8s-deploy@v1.2
+      with:
+        namespace: practicekubbf4e
+        manifests: |
+          manifests/deployment.yml
+          manifests/service.yml
+        images: |
+          practicecheck.azurecr.io/practicekub:${{ github.sha }}
+        imagepullsecrets: |
+          practicekubdockerauth
