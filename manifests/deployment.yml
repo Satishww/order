@@ -1,0 +1,19 @@
+apiVersion : apps/v1
+kind: Deployment
+metadata:
+  name: "practicekub-8e7b"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: "practicekub-8e7b"
+  template:
+    metadata:
+      labels:
+        app: "practicekub-8e7b"
+    spec:
+      containers:
+        - name: "practicekub-8e7b"
+          image: "practicecheck.azurecr.io/practicekub"
+          ports:
+          - containerPort: 80
