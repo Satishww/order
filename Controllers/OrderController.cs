@@ -18,10 +18,6 @@ namespace OrderItemWebAPI.Controllers
         [Route("{id}")]
         public IActionResult Post(int id)
         {
-            // 1. hard code
-            // call get fro other api
-            //set name of current obkect with retrived 
-            //return cart instance 
 
             Cart cartItem = new Cart()
             { CardId = 1, UserId = 1, MenuItemId=id };
@@ -29,13 +25,11 @@ namespace OrderItemWebAPI.Controllers
             string baseAddress = $"https://localhost:44314/api/menuitem/{id}";
 
             HttpClient client = new HttpClient();
-            //client.BaseAddress = new Uri(baseAddress);
             var response = client.GetAsync(baseAddress).Result;
             if (response.StatusCode == System.Net.HttpStatusCode.OK)
             {
                 string data = response.Content.ReadAsStringAsync().Result;
                 MenuItem mItem = new MenuItem();
-                //JsonConvert.SerializeObject((mItem);
                 mItem = JsonConvert.DeserializeObject<MenuItem>(data);
                 cartItem.menuItemName = mItem.name;
                 return Created("api/order", cartItem);
